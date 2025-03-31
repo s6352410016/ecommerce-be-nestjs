@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    container_name: postgres
+    image: postgres
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=bunlung
+      - POSTGRES_PASSWORD=5087
+      - POSTGRES_DB=ecommerce_db
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data     
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: on-failure
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=bellsau5087@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=50875087     
+    ports:
+      - 80:80    
+volumes:
+  pgdata:
