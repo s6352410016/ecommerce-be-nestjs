@@ -24,7 +24,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     try{
       await validateOrReject(signInDto);
     }catch(error){
-      throw new BadRequestException("error inputs is not valid");
+      throw new BadRequestException("Error inputs is not valid");
     } 
 
     const user = await this.authService.validateUser(email, password);

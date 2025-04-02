@@ -4,9 +4,9 @@ import { Repository } from 'typeorm';
 import { User } from './entity/user.entity';
 import { SignUpDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { JwtPayload } from './interface/jwt-payload';
 import { GoogleSignInDto } from './dto/google-signin.dto';
 import { GitHubSignInDto } from './dto/github-signin.dto';
+import { JwtPayloadDto } from './dto/jwt-payload.dto';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +21,7 @@ export class UsersService {
 
   async create(
     signUpDto: SignUpDto,
-  ): Promise<Omit<User, 'passwordHash'> | null> {
+  ): Promise<Omit<User, "passwordHash"> | null> {
     const { name, email, password, phone, address } = signUpDto;
     const userExist = await this.usersRepository.findOne({
       where: {
@@ -46,7 +46,7 @@ export class UsersService {
     return null;
   }
 
-  async profile(payload: JwtPayload): Promise<Omit<User, 'passwordHash'>> {
+  async profile(payload: JwtPayloadDto): Promise<Omit<User, "passwordHash">> {
     const { id, email } = payload;
     return (await this.usersRepository.findOne({
       where: {
@@ -65,12 +65,12 @@ export class UsersService {
         providerId: true,
         createdAt: true,
       },
-    })) as Omit<User, 'passwordHash'>;
+    })) as Omit<User, "passwordHash">;
   }
 
   async googleSignIn(
     googleSignInDto: GoogleSignInDto,
-  ): Promise<Omit<User, 'passwordHash'>> {
+  ): Promise<Omit<User, "passwordHash">> {
     const { provider, providerId, email, name, avatar } = googleSignInDto;
     const userExist = await this.usersRepository.findOne({
       where: {
@@ -78,12 +78,12 @@ export class UsersService {
       },
     });
 
-    if (userExist && userExist.provider === 'google') {
+    if (userExist && userExist.provider === "google") {
       //กรณีมีบัญชี google ในระบบอยู่แล้ว
       return userExist;
-    } else if (userExist && userExist.provider !== 'google') {
+    } else if (userExist && userExist.provider !== "google") {
       //กรณีมีบัญชี อยู่แล้วแต่ provider ไม่ใช่ google
-      throw new BadRequestException('error cannot signin to your account');
+      throw new BadRequestException("Error cannot signin to your account");
     }
 
     // กรณีไม่มีบัญชีอยู่ในระบบ
@@ -100,7 +100,7 @@ export class UsersService {
 
   async gitHubSignIn(
     gitHubSignInDto: GitHubSignInDto,
-  ): Promise<Omit<User, 'passwordHash'>> {
+  ): Promise<Omit<User, "passwordHash">> {
     const { provider, providerId, email, name, avatar } = gitHubSignInDto;
     const userExist = await this.usersRepository.findOne({
       where: {
@@ -108,12 +108,12 @@ export class UsersService {
       },
     });
 
-    if (userExist && userExist.provider === 'github') {
+    if (userExist && userExist.provider === "github") {
       //กรณีมีบัญชี github ในระบบอยู่แล้ว
       return userExist;
-    } else if (userExist && userExist.provider !== 'github') {
+    } else if (userExist && userExist.provider !== "github") {
       //กรณีมีบัญชี อยู่แล้วแต่ provider ไม่ใช่ github
-      throw new BadRequestException('error cannot signin to your account');
+      throw new BadRequestException("Error cannot signin to your account");
     }
 
     // กรณีไม่มีบัญชีอยู่ในระบบ

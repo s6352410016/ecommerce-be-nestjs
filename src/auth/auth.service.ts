@@ -7,11 +7,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Response as Res } from 'express';
 import { SignUpDto } from './dto/signup.dto';
-import { JwtPayload } from './interface/jwt-payload';
 import { SignJwtPayload } from './interface/sign-jwt-payload';
 import { ResSwagger } from './utils/res-swagger';
 import { GoogleSignInDto } from './dto/google-signin.dto';
 import { GitHubSignInDto } from './dto/github-signin.dto';
+import { JwtPayloadDto } from './dto/jwt-payload.dto';
 
 @Injectable()
 export class AuthService {
@@ -64,7 +64,7 @@ export class AuthService {
 
     async validateUser(email: string, password: string): Promise<Omit<User, "passwordHash"> | null>{
         const user = await this.userService.findOne(email);
-        if(user && await bcrypt.compare(password, user.passwordHash)){
+        if(user && user.passwordHash && await bcrypt.compare(password, user.passwordHash)){
             const { passwordHash, ...result } = user;
             return result;
         }
@@ -85,18 +85,18 @@ export class AuthService {
     async signUp(signUpDto: SignUpDto): Promise<Omit<User, "passwordHash">>{
         const user = await this.userService.create(signUpDto);
         if(!user){
-            throw new BadRequestException("error user already exist");
+            throw new BadRequestException("Error user already exist");
         }
 
         return user;
     }
 
-    async profile(payload: JwtPayload): Promise<Omit<User, "passwordHash">>{
+    async profile(payload: JwtPayloadDto): Promise<Omit<User, "passwordHash">>{
         const user = await this.userService.profile(payload);
         return user;
     }
 
-    async refresh(payload: JwtPayload, res: Res): Promise<ResSwagger>{
+    async refresh(payload: JwtPayloadDto, res: Res): Promise<ResSwagger>{
         const { id, email } = payload; 
         const [accessToken, refreshToken] = await this.signJwt({ id, email });
         await this.signCookie(accessToken, refreshToken, res);

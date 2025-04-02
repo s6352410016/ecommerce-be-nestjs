@@ -33,10 +33,12 @@ export class Product {
     @Column({ type: "int", default: 0, name: "stock_quantity" })
     stockQuantity: number;
 
+    @ApiProperty({ type: Category })
     @ManyToOne(() => Category, (category) => category.products, { nullable: true, onDelete: "SET NULL" })
     @JoinColumn({ name: "category_id" })
     category: Category;
 
+    @ApiProperty({ type: [ProductImage] })
     @OneToMany(() => ProductImage, (productImage) => productImage.product)
     images: ProductImage[];
 

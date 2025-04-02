@@ -25,7 +25,7 @@ import {
 import { SignInDto } from './dto/signin.dto';
 import { User } from 'src/users/entity/user.entity';
 import { AtAuthGuard } from './guards/at-auth.guard';
-import { JwtPayload } from './interface/jwt-payload';
+import { JwtPayloadDto } from './dto/jwt-payload.dto';
 import { RtAuthGuard } from './guards/rt-auth.guard';
 import { ResSwagger } from './utils/res-swagger';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -67,7 +67,7 @@ export class AuthController {
     @UseGuards(AtAuthGuard)
     @Get("profile")
     profile(@Request() req: Req): Promise<Omit<User, "passwordHash">>{
-        return this.authService.profile(req.user as JwtPayload);  
+        return this.authService.profile(req.user as JwtPayloadDto);  
     }
 
     @ApiResponse({
@@ -78,7 +78,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post("refresh")
     refresh(@Request() req: Req, @Response({ passthrough: true }) res: Res): Promise<ResSwagger>{
-        return this.authService.refresh(req.user as JwtPayload, res);
+        return this.authService.refresh(req.user as JwtPayloadDto, res);
     }
 
     @ApiResponse({

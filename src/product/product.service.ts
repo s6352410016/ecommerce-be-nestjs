@@ -1,13 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entitys/product.entity';
+import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
-import { ProductImage } from './entitys/product-images.entity';
+import { ProductImage } from './entities/product-images.entity';
 import { CreateProductDto } from './dto/create-product.dto';
-import { Category } from 'src/category/entity/category.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
+import { CategoryService } from 'src/category/category.service';
 
 @Injectable()
 export class ProductService {
@@ -26,23 +26,18 @@ export class ProductService {
         @InjectRepository(ProductImage)
         private productImageRepository: Repository<ProductImage>,
 
-        @InjectRepository(Category)
-        private categoryRepository: Repository<Category>,
+        private configService: ConfigService,
 
-        private configService: ConfigService
+        private categoryService: CategoryService,
     ){}
 
     async create(createProductDto: CreateProductDto, files: Express.Multer.File[]): Promise<Product>{
         const { name, description, price, stockQuantity, categoryId } = createProductDto;
 
-        const category = await this.categoryRepository.findOne({
-            where: {
-                id: categoryId
-            }
-        });
+        const category = await this.categoryService.findById(categoryId);
 
         if(!category){
-            throw new BadRequestException("error invalid categoryId");
+            throw new BadRequestException("Error invalid categoryId");
         }
 
         const product = this.productRepository.create({
@@ -80,9 +75,59 @@ export class ProductService {
             where: {
                 id: productSave.id
             },
-            relations: ["images"],
+            relations: {
+                images: true,
+                category: true
+            },
+            order: {
+                images: {
+                    id: "ASC"
+                }
+            }
         });
 
         return productWithImages as Product;
     }
+
+    async find(page: number = 1, limit: number = 10): Promise<Product[]>{
+        const products = await this.productRepository.find({
+            relations: {
+                images: true,
+                category: true
+            },
+            order: {
+                createdAt: "DESC",
+                images: {
+                    id: "ASC"
+                }
+            },
+        });
+        
+        return products.slice((page - 1) * limit, page * limit);
+    }
+
+    async findById(id: number): Promise<Product>{
+        const product = await this.productRepository.findOne({
+            where: {
+                id
+            },
+            relations: {
+                images: true,
+                category: true
+            },
+            order: {
+                images: {
+                    id: "ASC"
+                }
+            }
+        });
+
+        if(!product){
+            throw new NotFoundException("Product not found");
+        }
+
+        return product;
+    }
+
+    
 }

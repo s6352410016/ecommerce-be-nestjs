@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Product } from 'src/product/entitys/product.entity';
+import { Product } from 'src/product/entities/product.entity';
 import { 
     Entity, 
     Column, 
