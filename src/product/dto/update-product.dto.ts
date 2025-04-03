@@ -7,7 +7,7 @@ import {
     IsNumber,
 } from 'class-validator';
 
-export class CreateProductDto {
+export class UpdateProductDto {
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
@@ -34,13 +34,4 @@ export class CreateProductDto {
     @IsInt()
     @IsNotEmpty()
     categoryId: number;
-
-    @ApiProperty({
-        type: "array",
-        items: {
-            type: "string",
-            format: "binary"
-        }
-    })
-    images: Array<Express.Multer.File>;
 }
