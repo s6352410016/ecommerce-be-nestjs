@@ -42,5 +42,5 @@ export class CreateProductDto {
             format: "binary"
         }
     })
-    images: Array<Express.Multer.File>;
+    images: Express.Multer.File[];
 }
