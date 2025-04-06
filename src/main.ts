@@ -4,7 +4,6 @@ import * as cookieParser from 'cookie-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as morgan from 'morgan';
-import * as cors from 'cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,12 +20,14 @@ async function bootstrap() {
   app.setGlobalPrefix("api", {
     exclude: ["auth/google/callback", "auth/github/callback"]
   });
+  app.enableCors({
+    origin: [
+      "http://localhost:3000",
+    ],
+    credentials: true,
+  });
   app.use(cookieParser());
   app.use(morgan("dev"));
-  app.use(cors({
-    origin: "*",
-    credentials: true,
-  }));
 
   await app.listen(process.env.PORT ?? 8080);
 }

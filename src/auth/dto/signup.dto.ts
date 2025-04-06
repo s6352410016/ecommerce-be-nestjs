@@ -3,7 +3,6 @@ import {
     IsString,
     IsNotEmpty,
     IsEmail,
-    IsPhoneNumber,
     MinLength,
     MaxLength
 } from 'class-validator';
@@ -27,7 +26,6 @@ export class SignUpDto {
     password: string;
 
     @ApiProperty()
-    @IsPhoneNumber()
     @IsNotEmpty()
     @MaxLength(20)
     phone: string;

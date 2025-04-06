@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { GoogleSignInDto } from './dto/google-signin.dto';
 import { GitHubSignInDto } from './dto/github-signin.dto';
 import { JwtPayloadDto } from './dto/jwt-payload.dto';
+import { Response } from 'express';
 
 @Injectable()
 export class UsersService {
@@ -70,6 +71,7 @@ export class UsersService {
 
   async googleSignIn(
     googleSignInDto: GoogleSignInDto,
+    res: Response,
   ): Promise<Omit<User, "passwordHash">> {
     const { provider, providerId, email, name, avatar } = googleSignInDto;
     const userExist = await this.usersRepository.findOne({
@@ -83,6 +85,7 @@ export class UsersService {
       return userExist;
     } else if (userExist && userExist.provider !== "google") {
       //กรณีมีบัญชี อยู่แล้วแต่ provider ไม่ใช่ google
+      res.redirect("http://localhost:3000/auth-verify?status=error");
       throw new BadRequestException("Error cannot signin to your account");
     }
 
@@ -100,6 +103,7 @@ export class UsersService {
 
   async gitHubSignIn(
     gitHubSignInDto: GitHubSignInDto,
+    res: Response,
   ): Promise<Omit<User, "passwordHash">> {
     const { provider, providerId, email, name, avatar } = gitHubSignInDto;
     const userExist = await this.usersRepository.findOne({
@@ -113,6 +117,7 @@ export class UsersService {
       return userExist;
     } else if (userExist && userExist.provider !== "github") {
       //กรณีมีบัญชี อยู่แล้วแต่ provider ไม่ใช่ github
+      res.redirect("http://localhost:3000/auth-verify?status=error");
       throw new BadRequestException("Error cannot signin to your account");
     }
 

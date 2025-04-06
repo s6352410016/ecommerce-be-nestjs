@@ -1,137 +1,160 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { User } from 'src/users/entity/user.entity';
-import { UsersService } from 'src/users/users.service';
-import * as bcrypt from 'bcrypt';
-import { ReqObjUser } from './interface/req-obj-user.dto';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { Response as Res } from 'express';
-import { SignUpDto } from './dto/signup.dto';
-import { SignJwtPayload } from './interface/sign-jwt-payload';
-import { ResSwagger } from './utils/res-swagger';
-import { GoogleSignInDto } from './dto/google-signin.dto';
-import { GitHubSignInDto } from './dto/github-signin.dto';
-import { JwtPayloadDto } from './dto/jwt-payload.dto';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { User } from "src/users/entity/user.entity";
+import { UsersService } from "src/users/users.service";
+import * as bcrypt from "bcrypt";
+import { ReqObjUser } from "./interface/req-obj-user.dto";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { Response as Res } from "express";
+import { SignUpDto } from "./dto/signup.dto";
+import { SignJwtPayload } from "./interface/sign-jwt-payload";
+import { ResSwagger } from "./utils/res-swagger";
+import { GoogleSignInDto } from "./dto/google-signin.dto";
+import { GitHubSignInDto } from "./dto/github-signin.dto";
+import { JwtPayloadDto } from "./dto/jwt-payload.dto";
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private userService: UsersService,
-        private jwtService: JwtService,
-        private configService: ConfigService
-    ){}
+  constructor(
+    private userService: UsersService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
 
-    async signCookie(accessToken: string, refreshToken: string, res: Res){
-        const token = JSON.stringify({
-            accessToken,
-            refreshToken
-        });
+  async signCookie(accessToken: string, refreshToken: string, res: Res) {
+    const token = JSON.stringify({
+      accessToken,
+      refreshToken,
+    });
 
-        res.cookie("token", token, {
-            sameSite: "none",
-            httpOnly: true,
-            secure: true,
-        });
+    res.cookie("token", token, {
+      sameSite: "none",
+      httpOnly: true,
+      secure: true,
+    });
+  }
+
+  async signJwt(payload: SignJwtPayload): Promise<string[]> {
+    const { id, email } = payload;
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          id,
+          email,
+        },
+        {
+          secret: this.configService.get<string>("AT_SECRET"),
+          expiresIn: "30m",
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          id,
+          email,
+        },
+        {
+          secret: this.configService.get<string>("RT_SECRET"),
+          expiresIn: "1h",
+        },
+      ),
+    ]);
+
+    return [accessToken, refreshToken];
+  }
+
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<Omit<User, "passwordHash"> | null> {
+    const user = await this.userService.findOne(email);
+    if (
+      user &&
+      user.passwordHash &&
+      (await bcrypt.compare(password, user.passwordHash))
+    ) {
+      const { passwordHash, ...result } = user;
+      return result;
     }
 
-    async signJwt(payload: SignJwtPayload): Promise<string[]>{
-        const { id, email } = payload;
-        const [accessToken, refreshToken] = await Promise.all([
-            this.jwtService.signAsync(
-                {
-                    id,
-                    email
-                },
-                {
-                    secret: this.configService.get<string>("AT_SECRET"),
-                    expiresIn: "30m"
-                }
-            ),
-            this.jwtService.signAsync(
-                {
-                    id,
-                    email
-                },
-                {
-                    secret: this.configService.get<string>("RT_SECRET"),
-                    expiresIn: "1h"
-                }
-            ),
-        ]);
+    return null;
+  }
 
-        return [accessToken, refreshToken];
+  async signIn(user: ReqObjUser, res: Res): Promise<ResSwagger> {
+    const { id, email } = user;
+    const [accessToken, refreshToken] = await this.signJwt({ id, email });
+    await this.signCookie(accessToken, refreshToken, res);
+
+    return {
+      message: "signin success",
+    };
+  }
+
+  async signUp(signUpDto: SignUpDto): Promise<Omit<User, "passwordHash">> {
+    const user = await this.userService.create(signUpDto);
+    if (!user) {
+      throw new BadRequestException("Error email already exist");
     }
 
-    async validateUser(email: string, password: string): Promise<Omit<User, "passwordHash"> | null>{
-        const user = await this.userService.findOne(email);
-        if(user && user.passwordHash && await bcrypt.compare(password, user.passwordHash)){
-            const { passwordHash, ...result } = user;
-            return result;
-        }
+    return user;
+  }
 
-        return null;
-    }
+  async profile(payload: JwtPayloadDto): Promise<Omit<User, "passwordHash">> {
+    const user = await this.userService.profile(payload);
+    return user;
+  }
 
-    async signIn(user: ReqObjUser, res: Res): Promise<ResSwagger>{
-        const { id, email } = user;
-        const [accessToken, refreshToken] = await this.signJwt({ id, email });
-        await this.signCookie(accessToken, refreshToken, res);
+  async refresh(payload: JwtPayloadDto, res: Res): Promise<ResSwagger> {
+    const { id, email } = payload;
+    const [accessToken, refreshToken] = await this.signJwt({ id, email });
+    await this.signCookie(accessToken, refreshToken, res);
 
-        return {
-            message: "signin success"
-        }
-    }
+    return {
+      message: "refresh token success",
+    };
+  }
 
-    async signUp(signUpDto: SignUpDto): Promise<Omit<User, "passwordHash">>{
-        const user = await this.userService.create(signUpDto);
-        if(!user){
-            throw new BadRequestException("Error user already exist");
-        }
+  signout(res: Res): ResSwagger {
+    res.clearCookie("token");
+    return {
+      message: "signout success",
+    };
+  }
 
-        return user;
-    }
+  async googleSignIn(
+    googleSignInDto: GoogleSignInDto,
+    res: Res,
+  ): Promise<ResSwagger> {
+    const user = await this.userService.googleSignIn(googleSignInDto, res);
+    const { id, email: userEmail } = user;
+    const [accessToken, refreshToken] = await this.signJwt({
+      id,
+      email: userEmail,
+    });
+    await this.signCookie(accessToken, refreshToken, res);
 
-    async profile(payload: JwtPayloadDto): Promise<Omit<User, "passwordHash">>{
-        const user = await this.userService.profile(payload);
-        return user;
-    }
+    res.redirect("http://localhost:3000/auth-verify?status=success");
 
-    async refresh(payload: JwtPayloadDto, res: Res): Promise<ResSwagger>{
-        const { id, email } = payload; 
-        const [accessToken, refreshToken] = await this.signJwt({ id, email });
-        await this.signCookie(accessToken, refreshToken, res);
+    return {
+      message: "signin google success",
+    };
+  }
 
-        return {
-            message: "refresh token success"
-        }
-    }
+  async gitHubSignIn(
+    gitHubSignInDto: GitHubSignInDto,
+    res: Res,
+  ): Promise<ResSwagger> {
+    const user = await this.userService.gitHubSignIn(gitHubSignInDto, res);
+    const { id, email: userEmail } = user;
+    const [accessToken, refreshToken] = await this.signJwt({
+      id,
+      email: userEmail,
+    });
+    await this.signCookie(accessToken, refreshToken, res);
 
-    signout(res: Res): ResSwagger{
-        res.clearCookie("token");
-        return {
-            message: "signout success"
-        }
-    }
+    res.redirect("http://localhost:3000/auth-verify?status=success");
 
-    async googleSignIn(googleSignInDto: GoogleSignInDto, res: Res): Promise<ResSwagger>{
-        const user = await this.userService.googleSignIn(googleSignInDto);
-        const { id, email: userEmail } = user;
-        const [accessToken, refreshToken] = await this.signJwt({ id, email: userEmail });
-        await this.signCookie(accessToken, refreshToken, res);
-
-        return {
-            message: "signin google success"
-        }
-    }
-
-    async gitHubSignIn(gitHubSignInDto: GitHubSignInDto, res: Res): Promise<ResSwagger>{
-        const user = await this.userService.gitHubSignIn(gitHubSignInDto);
-        const { id, email: userEmail } = user;
-        const [accessToken, refreshToken] = await this.signJwt({ id, email: userEmail });
-        await this.signCookie(accessToken, refreshToken, res);
-
-        return {
-            message: "signin github success"
-        }
-    }
+    return {
+      message: "signin github success",
+    };
+  }
 }
