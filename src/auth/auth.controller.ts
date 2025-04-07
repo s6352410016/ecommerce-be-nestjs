@@ -103,7 +103,7 @@ export class AuthController {
     })
     @UseGuards(GoogleAuthGuard)
     @Get("google/callback")
-    async googleAuthRedirect(@Request() req: Req, @Response({ passthrough: true }) res: Res): Promise<ResSwagger>{
+    async googleAuthRedirect(@Request() req: Req, @Response({ passthrough: true }) res: Res){
         return this.authService.googleSignIn(req.user as GoogleSignInDto, res);
     }
 
@@ -118,7 +118,7 @@ export class AuthController {
     })
     @UseGuards(GitHubAuthGuard)
     @Get("github/callback")
-    async gitHubAuthRedirect(@Request() req: Req, @Response({ passthrough: true }) res: Res): Promise<ResSwagger>{
+    async gitHubAuthRedirect(@Request() req: Req, @Response({ passthrough: true }) res: Res){
         return this.authService.gitHubSignIn(req.user as GitHubSignInDto, res);
     }
 }

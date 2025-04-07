@@ -123,7 +123,7 @@ export class AuthService {
   async googleSignIn(
     googleSignInDto: GoogleSignInDto,
     res: Res,
-  ): Promise<ResSwagger> {
+  ){
     const user = await this.userService.googleSignIn(googleSignInDto, res);
     const { id, email: userEmail } = user;
     const [accessToken, refreshToken] = await this.signJwt({
@@ -133,16 +133,12 @@ export class AuthService {
     await this.signCookie(accessToken, refreshToken, res);
 
     res.redirect("http://localhost:3000/auth-verify?status=success");
-
-    return {
-      message: "signin google success",
-    };
   }
 
   async gitHubSignIn(
     gitHubSignInDto: GitHubSignInDto,
     res: Res,
-  ): Promise<ResSwagger> {
+  ){
     const user = await this.userService.gitHubSignIn(gitHubSignInDto, res);
     const { id, email: userEmail } = user;
     const [accessToken, refreshToken] = await this.signJwt({
@@ -152,9 +148,5 @@ export class AuthService {
     await this.signCookie(accessToken, refreshToken, res);
 
     res.redirect("http://localhost:3000/auth-verify?status=success");
-
-    return {
-      message: "signin github success",
-    };
   }
 }
