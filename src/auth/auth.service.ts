@@ -44,7 +44,7 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>("AT_SECRET"),
-          expiresIn: "30m",
+          expiresIn: "15m",
         },
       ),
       this.jwtService.signAsync(
