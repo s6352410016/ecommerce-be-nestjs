@@ -12,7 +12,6 @@ import {
   Query,
   UploadedFile,
   UploadedFiles,
-  UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { ProductService } from "./product.service";
@@ -20,13 +19,11 @@ import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Product } from "./entities/product.entity";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { AtAuthGuard } from "src/auth/guards/at-auth.guard";
 import { ProductResSwagger } from "./utils/product-res-swagger";
 import { ProductImage } from "./entities/product-images.entity";
 import { CommonResSwagger } from "./utils/common-res-swagger";
 import { UpdateProductDto } from "./dto/update-product.dto";
 
-@UseGuards(AtAuthGuard)
 @ApiTags("product")
 @Controller("product")
 export class ProductController {
