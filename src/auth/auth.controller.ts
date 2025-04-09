@@ -85,7 +85,6 @@ export class AuthController {
         type: ResSwagger,
         status: HttpStatus.OK
     })
-    @UseGuards(AtAuthGuard)
     @HttpCode(HttpStatus.OK)
     @Post("signout")
     signout(@Response({ passthrough: true }) res: Res): ResSwagger{

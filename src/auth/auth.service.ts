@@ -22,12 +22,13 @@ export class AuthService {
   ) {}
 
   async signCookie(accessToken: string, refreshToken: string, res: Res) {
-    const token = JSON.stringify({
-      accessToken,
-      refreshToken,
+    res.cookie("accessToken", accessToken, {
+      sameSite: "none",
+      httpOnly: true,
+      secure: true,
     });
 
-    res.cookie("token", token, {
+    res.cookie("refreshToken", refreshToken, {
       sameSite: "none",
       httpOnly: true,
       secure: true,
@@ -114,7 +115,8 @@ export class AuthService {
   }
 
   signout(res: Res): ResSwagger {
-    res.clearCookie("token");
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
     return {
       message: "signout success",
     };
