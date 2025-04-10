@@ -15,14 +15,14 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { ProductService } from "./product.service";
-import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiConsumes, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Product } from "./entities/product.entity";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { ProductResSwagger } from "./utils/product-res-swagger";
 import { ProductImage } from "./entities/product-images.entity";
 import { CommonResSwagger } from "./utils/common-res-swagger";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { PaginationDto } from "./dto/pagination.dto";
 
 @ApiTags("product")
 @Controller("product")
@@ -51,15 +51,33 @@ export class ProductController {
   }
 
   @ApiResponse({
-    type: [ProductResSwagger],
+    type: [PaginationDto<Product>],
     status: HttpStatus.OK,
+  })
+  @ApiQuery({
+    name: "page",
+    required: false,
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+  })
+  @ApiQuery({
+    name: "categoryName",
+    required: false,
+  })
+  @ApiQuery({
+    name: "productName",
+    required: false,
   })
   @Get("find")
   find(
     @Query("page") page: number = 1,
     @Query("limit") limit: number = 10,
-  ): Promise<Product[]> {
-    return this.productService.find(+page, +limit);
+    @Query("categoryName") categoryName?: string,
+    @Query("productName") productName?: string,
+  ): Promise<PaginationDto<Product>> {
+    return this.productService.find(+page, +limit, categoryName, productName);
   }
 
   @ApiResponse({
@@ -69,15 +87,6 @@ export class ProductController {
   @Get("find/:id")
   findById(@Param("id") id: number): Promise<Product> {
     return this.productService.findById(+id);
-  }
-
-  @ApiResponse({
-    type: [ProductResSwagger],
-    status: HttpStatus.OK,
-  })
-  @Get("findByName")
-  findByName(@Query("productName") name: string): Promise<Product[]> {
-    return this.productService.findByName(name);
   }
 
   @ApiResponse({

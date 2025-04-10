@@ -19,6 +19,7 @@ import { CategoryService } from "src/category/category.service";
 import { CommonResSwagger } from "./utils/common-res-swagger";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { Category } from "src/category/entity/category.entity";
+import { PaginationDto } from "./dto/pagination.dto";
 
 @Injectable()
 export class ProductService {
@@ -144,16 +145,105 @@ export class ProductService {
     return productWithImages as Product;
   }
 
-  async find(page: number = 1, limit: number = 10): Promise<Product[]> {
-    const products = await this.productRepository.find({
-      order: {
-        createdAt: "DESC",
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+  async find(page: number = 1, limit: number = 10, categoryName?: string, productName?: string): Promise<PaginationDto<Product>> {
+    let products: Product[] = [];
+    let totalItems: number = 0;
 
-    return products;
+    if(!categoryName && !productName){
+      const [productsFind, count] = await this.productRepository.findAndCount({
+        order: {
+          createdAt: "DESC",
+          images: {
+            createdAt: "ASC",
+          }
+        },
+        relations: {
+          images: true,
+          category: true,
+        },
+      });
+      products = productsFind;
+      totalItems = count
+    }
+
+    if(categoryName && !productName){
+      const [productsFind, count] = await this.productRepository.findAndCount({
+        relations: {
+          images: true,
+          category: true,
+        },
+        where: {
+          category: {
+            name: categoryName,
+          }
+        },
+        order: {
+          createdAt: "DESC",
+          images: {
+            createdAt: "ASC",
+          }
+        },
+      });
+      products = productsFind;
+      totalItems = count
+    }
+
+    if(!categoryName && productName){
+      const [productsFind, count] = await this.productRepository.findAndCount({
+        relations: {
+          images: true,
+          category: true,
+        },
+        where: {
+          name: Like(`%${productName}%`),
+        },
+        order: {
+          createdAt: "DESC",
+          images: {
+            createdAt: "ASC",
+          }
+        },
+      });
+      products = productsFind;
+      totalItems = count
+    }
+
+    if(categoryName && productName){
+      const [productsFind, count] = await this.productRepository.findAndCount({
+        relations: {
+          images: true,
+          category: true,
+        },
+        where: {
+          name: Like(`%${productName}%`),
+          category: {
+            name: categoryName,
+          },
+        },
+        order: {
+          createdAt: "DESC",
+          images: {
+            createdAt: "ASC",
+          }
+        },
+      });
+      products = productsFind;
+      totalItems = count
+    }
+    
+    const productPaginate = products.slice((page - 1) * limit, (page + limit - 1));
+    const itemPerPage = 10
+    const totalPages = Math.ceil(totalItems / itemPerPage);
+
+    return {
+      data: productPaginate,
+      pagination: {
+        currentPage: page,
+        pageSize: itemPerPage,
+        totalPages,
+        totalItems,
+      }
+    }
   }
 
   async findById(id: number): Promise<Product> {
@@ -164,18 +254,6 @@ export class ProductService {
     }
 
     return product;
-  }
-
-  async findByName(name: string): Promise<Product[]> {
-    const products = await this.productRepository.findBy({
-      name: Like(`%${name}%`),
-    });
-
-    if (!products.length) {
-      throw new NotFoundException("Product not found");
-    }
-
-    return products;
   }
 
   async update(
