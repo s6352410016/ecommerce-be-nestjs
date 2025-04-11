@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Product } from "./entities/product.entity";
-import { Like, Repository } from "typeorm";
+import { ILike, Repository } from "typeorm";
 import { ProductImage } from "./entities/product-images.entity";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { v4 as uuidv4 } from "uuid";
@@ -195,7 +195,7 @@ export class ProductService {
           category: true,
         },
         where: {
-          name: Like(`%${productName}%`),
+          name: ILike(`%${productName}%`),
         },
         order: {
           createdAt: "DESC",
@@ -215,7 +215,7 @@ export class ProductService {
           category: true,
         },
         where: {
-          name: Like(`%${productName}%`),
+          name: ILike(`%${productName}%`),
           category: {
             name: categoryName,
           },
